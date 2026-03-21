@@ -16,7 +16,7 @@ This symlinks each directory under `skills/` into `~/.claude/skills/`, cleaning 
 
 ## Architecture
 
-- **`skills/<name>/SKILL.md`** — Each skill is a directory containing a `SKILL.md` with YAML frontmatter (`name`, `description`, optional `allowed-tools`) followed by markdown content. Some skills also have a `references/` subdirectory with supplementary docs.
+- **`skills/<name>/SKILL.md`** — Each skill is a directory containing a `SKILL.md` with YAML frontmatter followed by markdown content.
 - **`install.sh`** — Idempotent installer that manages symlinks from this repo into `~/.claude/skills/`.
 
 ## Skill Format
