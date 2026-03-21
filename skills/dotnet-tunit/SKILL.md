@@ -1,28 +1,11 @@
 ---
 name: dotnet-tunit
-description: Use when writing, modifying, or reviewing TUnit tests in .NET projects. Covers test structure, assertions, data-driven testing, filtering, and TestContainers integration. ALSO MANDATORY before ANY `dotnet test` command in TUnit/MTP projects — do not construct `--treenode-filter` arguments from memory, the syntax is non-obvious and you WILL get it wrong.
+description: Use when writing, modifying, or reviewing TUnit tests in .NET projects. Covers test structure, assertions, data-driven testing, and TestContainers integration.
 ---
 
 # TUnit Testing Reference
 
-TUnit is built on **Microsoft Testing Platform (MTP)**, not VSTest. This affects CLI syntax (see `references/filtering.md`).
-
-## Running Tests (MTP CLI)
-
-MTP does **not** accept positional project/solution arguments. Use explicit flags:
-
-```bash
-# Project — must use --project flag
-dotnet test --project tests/MyProject
-
-# Solution — must use --solution flag
-dotnet test --solution MySolution.sln
-
-# With filter
-dotnet test --project tests/MyProject --treenode-filter "/*/*/MyClassName/*"
-```
-
-**Wrong (VSTest habit):** `dotnet test tests/MyProject` — this errors under MTP.
+> **MANDATORY:** You MUST invoke the `dotnet-mtp` skill before running any `dotnet test` command. TUnit uses Microsoft Testing Platform (MTP), not VSTest.
 
 ## The One Rule
 
@@ -53,7 +36,6 @@ Missing `await` compiles but **silently skips the assertion**. The test passes w
 | `Assert.Contains("x", str)` | `await Assert.That(str).Contains("x")` |
 | `Assert.Single(c)` | `await Assert.That(c).HasSingleItem()` |
 | `IAsyncLifetime` | `IAsyncInitializer` + `IAsyncDisposable` |
-| `--filter "FullyQualifiedName~X"` | `--treenode-filter "/*/*/X/*"` |
 
 ## Namespace Imports
 
@@ -68,7 +50,6 @@ Missing `await` compiles but **silently skips the assertion**. The test passes w
 |---|---|
 | `references/test-structure.md` | `[Test]`, lifecycle hooks, parallelism, `IAsyncInitializer` |
 | `references/data-driven.md` | `[Arguments]`, `[MethodDataSource]`, `[ClassDataSource]`, `[MatrixDataSource]` |
-| `references/filtering.md` | MTP `--treenode-filter` graph query syntax |
 | `references/testcontainers.md` | TestContainers fixtures, `SharedType`, isolation patterns |
 | `references/assertions-core.md` | `.And`/`.Or` chaining, `Assert.Multiple`, return values |
 | `references/assertions-values.md` | Equality, comparison, null, boolean, numeric, type checking |
