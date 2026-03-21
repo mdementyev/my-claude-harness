@@ -1,6 +1,7 @@
 ---
 name: dotnet-mtp
 description: MANDATORY before ANY `dotnet test` command in projects using Microsoft Testing Platform (MTP), including TUnit. Do not construct `--treenode-filter` arguments from memory — the syntax is non-obvious and you WILL get it wrong.
+user-invocable: false
 ---
 
 # Microsoft Testing Platform (MTP) Reference
