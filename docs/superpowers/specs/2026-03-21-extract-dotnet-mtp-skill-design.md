@@ -13,8 +13,8 @@ Extract all MTP-specific content from `dotnet-tunit` into a new `dotnet-mtp` ski
 A single file with:
 
 1. **Frontmatter** — name `dotnet-mtp`. Description states it is MANDATORY before ANY `dotnet test` command in MTP-based projects (including TUnit). Warns not to construct `--treenode-filter` arguments from memory.
-2. **CLI syntax section** — `--project`/`--solution` flags, positional argument prohibition, VSTest-to-MTP migration table for CLI commands.
-3. **Filtering section** — full `--treenode-filter` graph query syntax folded in from `references/filtering.md`: path syntax (`/Assembly/Namespace/Class/Method`), wildcards, logical operators, property filtering, combined path+property filters, common recipes, common mistakes table.
+2. **CLI syntax section** — `--project`/`--solution` flags, positional argument prohibition, VSTest-to-MTP migration table for CLI commands. Note: this content currently exists in both `SKILL.md` (lines 10-25) and `references/filtering.md` (lines 76-88) with slightly different wording. Use `filtering.md` as the authoritative source since it is more complete.
+3. **Filtering section** — full `--treenode-filter` graph query syntax folded in from `references/filtering.md`: path syntax (`/Assembly/Namespace/Class/Method`), wildcards, logical operators, property filtering, combined path+property filters, common recipes, common mistakes table (which covers both filtering and CLI mistakes).
 
 All content comes from existing `dotnet-tunit` files. No new content.
 
@@ -23,7 +23,7 @@ All content comes from existing `dotnet-tunit` files. No new content.
 1. **Frontmatter description** — remove the "ALSO MANDATORY before ANY `dotnet test`" clause. That responsibility belongs to `dotnet-mtp`.
 2. **Add mandatory skill reference** — prominent note near the top: "You MUST invoke the `dotnet-mtp` skill before running any `dotnet test` command."
 3. **Remove "Running Tests (MTP CLI)" section** — `--project`/`--solution` syntax moves to `dotnet-mtp`.
-4. **Remove VSTest-to-MTP rows from mapping table** — the `--filter` to `--treenode-filter` and positional argument rows move out. TUnit-specific rows (attributes, assertions, `IAsyncLifetime`) stay.
+4. **Remove the `--filter` to `--treenode-filter` row from the mapping table** (line 56) — this is the only MTP-specific row. All other rows (attributes, assertions, `IAsyncLifetime`) are TUnit-specific and stay.
 5. **Delete `references/filtering.md`** — content is now in `dotnet-mtp/SKILL.md`.
 
 ## What stays in dotnet-tunit
