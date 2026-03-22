@@ -22,6 +22,10 @@ public async Task My_Test()
 
 Missing `await` compiles but **silently skips the assertion**. The test passes without checking anything.
 
+## Gotchas
+
+**`Activity.Current` is not null (TUnit 1.16.0+):** TUnit emits `System.Diagnostics.Activity` trace spans during test execution. Code or assertions that assume `Activity.Current is null` will break.
+
 ## xUnit/NUnit → TUnit
 
 | xUnit/NUnit | TUnit |
