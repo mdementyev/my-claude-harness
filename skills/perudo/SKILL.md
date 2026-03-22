@@ -57,7 +57,7 @@ All output is JSON to stdout. Store the latest state JSON in a variable and pipe
 1. Ask the user how many players (2-6)
 2. Run `python3 ENGINE init <count>` (optionally with `--seed` if user requests reproducibility)
 3. Store the returned state JSON
-4. Spawn N persistent agents using the Agent tool, one per player. Use this exact prompt for each (replacing PLAYER_ID and PLAYER_NAME):
+4. Spawn N persistent agents using the Agent tool, one per player. **Use `model: "sonnet"` for each agent** — haiku is not capable enough for bluffing and probabilistic reasoning. Use this exact prompt for each (replacing PLAYER_ID and PLAYER_NAME):
 
 ### Agent Prompt Template
 
