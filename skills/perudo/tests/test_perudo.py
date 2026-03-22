@@ -430,6 +430,31 @@ class TestResolveCall:
         assert revealed[1]["id"] == 2
         assert revealed[1]["dice"] == [5, 6, 2]
 
+    def test_bidding_on_ones_counts_only_literal_ones(self):
+        """When face_value is 1, ones are NOT wild (they're the target). Only literal ones count."""
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [1, 1, 4]},
+                {"id": 2, "dice": [1, 3, 5]},
+            ],
+            current_bid={"quantity": 3, "face_value": 1, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["call_result"]["actual_count"] == 3  # 3 literal ones, no wild doubling
+
+    def test_all_ones_rolled(self):
+        """All dice are ones. Bidding on fours: ones are wild, so all count as fours."""
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [1, 1, 1]},
+                {"id": 2, "dice": [1, 1, 1]},
+            ],
+            current_bid={"quantity": 6, "face_value": 4, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["call_result"]["actual_count"] == 6
+        assert result["call_result"]["loser_id"] == 2  # bid met, caller loses
+
 
 class TestPlayerView:
     def test_own_dice_visible(self):
