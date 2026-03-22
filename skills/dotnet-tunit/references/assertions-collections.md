@@ -39,11 +39,15 @@ await Assert.That(found.Age).IsGreaterThan(0);
 
 ## All / Any
 
+**`All()` and `Any()` take `Func<T, bool>` predicates** (not assertion lambdas):
+
 ```csharp
-await Assert.That(scores).All(x => x.IsGreaterThan(0));   // every element
-await Assert.That(scores).Any(x => x.IsGreaterThan(90));   // at least one
-await Assert.That(items).ContainsOnly(x => x > 0);         // alias for All with predicate
+await Assert.That(scores).All(x => x > 0);    // every element
+await Assert.That(scores).Any(x => x > 90);   // at least one
+await Assert.That(items).ContainsOnly(x => x > 0);
 ```
+
+**Note:** `Count(predicate)` is different — it takes an assertion lambda `Func<IAssertionSource<T>, Assertion<T>?>`. Don't confuse the two.
 
 ### All().Satisfy — Assert on Each Item
 
@@ -99,6 +103,8 @@ await Assert.That(actual).IsEquivalentTo(expected);
 Require matching order:
 
 ```csharp
+using TUnit.Assertions.Enums;
+
 await Assert.That(actual).IsEquivalentTo(expected, CollectionOrdering.Matching);
 ```
 
@@ -174,7 +180,7 @@ await Assert.That(dict).AnyValue(v => v > 100);
 | `Assert.Single(c)` (xUnit) | `await Assert.That(c).HasSingleItem()` |
 | `Assert.Empty(c)` (xUnit) | `await Assert.That(c).IsEmpty()` |
 | `Assert.Contains(item, c)` (xUnit, note arg order) | `await Assert.That(c).Contains(item)` |
-| `Assert.All(c, x => ...)` (xUnit) | `await Assert.That(c).All(x => ...)` |
+| `Assert.All(c, x => ...)` (xUnit) | `await Assert.That(c).All(x => ...)` — predicate returns `bool` |
 | `.ContainsKey("k").WithValue("v")` (doesn't exist) | `.ContainsKeyWithValue("k", "v")` — single method |
 | `Assert.That(list[0]).IsEqualTo("x")` (manual index) | `Assert.That(list).ItemAt(0).IsEqualTo("x")` |
 | `.First()` or `.ElementAt(0)` (doesn't exist) | `.FirstItem()` / `.ItemAt(0)` |

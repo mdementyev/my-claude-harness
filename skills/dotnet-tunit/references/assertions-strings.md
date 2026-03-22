@@ -15,7 +15,7 @@ await Assert.That(str).DoesNotMatch(@"\d+");
 
 ## Case Insensitivity
 
-`.IgnoringCase()` works on Contains, StartsWith, EndsWith, Matches, and IsEqualTo:
+`.IgnoringCase()` works on Contains, StartsWith, EndsWith, and IsEqualTo:
 
 ```csharp
 await Assert.That(name).Contains("alice").IgnoringCase();
@@ -50,7 +50,9 @@ Basic pattern matching. For advanced regex features (groups, match indexing), se
 
 ```csharp
 await Assert.That(email).Matches(@"^[\w.]+@[\w.]+\.\w+$");
-await Assert.That(code).Matches("[A-Z]{3}-\\d{4}").IgnoringCase();
+
+// For case-insensitive regex, use inline flag — IgnoringCase() does NOT work with Matches()
+await Assert.That(code).Matches("(?i)[A-Z]{3}-\\d{4}");
 ```
 
 ## String Parsing

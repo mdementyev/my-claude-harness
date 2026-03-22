@@ -29,12 +29,12 @@ public async Task My_Test(int input, string expected) { }
 
 public static IEnumerable<(int, string)> GetCases() => [(1, "one"), (2, "two")];
 
-// External class — typeof + nameof
+// External class — typeof + nameof (works with static classes)
 [Test]
 [MethodDataSource(typeof(SharedData), nameof(SharedData.GetCases))]
 public async Task My_Test(string value) { }
 
-// External class — generic form
+// External class — generic form (class must NOT be static)
 [Test]
 [MethodDataSource<SharedData>(nameof(SharedData.GetCases))]
 public async Task My_Test(string value) { }

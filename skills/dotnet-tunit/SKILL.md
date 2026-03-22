@@ -50,6 +50,7 @@ Missing `await` compiles but **silently skips the assertion**. The test passes w
 |---|---|
 | _(implicit)_ | `Assert.That()` — available by default |
 | `using TUnit.Core.Interfaces` | `IAsyncInitializer` for async fixture setup |
+| `using TUnit.Assertions.Enums` | `CollectionOrdering` for `IsEquivalentTo()` |
 
 ## Reference Files
 

@@ -20,19 +20,19 @@ await Assert.That(timestamp).IsInPast();
 Basic `.Matches("pattern")` is in `assertions-strings.md`. Advanced features:
 
 ```csharp
-// Named groups
+// Named groups — chain through .And
 await Assert.That("John-42").Matches(@"(?<name>\w+)-(?<age>\d+)")
-    .Group("name", g => g.IsEqualTo("John"))
-    .Group("age", g => g.IsEqualTo("42"));
+    .And.Group("name", g => g.IsEqualTo("John"))
+    .And.Group("age", g => g.IsEqualTo("42"));
 
 // Indexed groups (0 = full match, 1+ = captures)
 await Assert.That("2024-03-21").Matches(@"(\d{4})-(\d{2})-(\d{2})")
-    .Group(1, g => g.IsEqualTo("2024"));
+    .And.Group(1, g => g.IsEqualTo("2024"));
 
-// Multiple matches
+// Multiple matches — Match() lambda receives RegexMatch, not string
 await Assert.That("aaa bbb ccc").Matches(@"\w+")
-    .Match(0, m => m.IsEqualTo("aaa"))
-    .Match(2, m => m.IsEqualTo("ccc"));
+    .And.Match(0, m => m.Member(r => r.Value, v => v.IsEqualTo("aaa")))
+    .And.Match(2, m => m.Member(r => r.Value, v => v.IsEqualTo("ccc")));
 ```
 
 ## Task
@@ -87,12 +87,12 @@ await Assert.That(token).IsNone();                        // CancellationToken.N
 
 ## Member Assertions
 
-Assert on object properties with `.Member().Satisfies()`:
+Assert on object properties with `.Member(selector, assertion)` — two arguments, no `.Satisfies()`:
 
 ```csharp
 await Assert.That(user)
-    .Member(x => x.Name).Satisfies(val => val.IsEqualTo("Alice"))
-    .And.Member(x => x.Age).Satisfies(val => val.IsGreaterThan(0));
+    .Member(x => x.Name, val => val.IsEqualTo("Alice"))
+    .And.Member(x => x.Age, val => val.IsGreaterThan(0));
 ```
 
 ## Satisfies with Mapping
@@ -121,8 +121,10 @@ await Assert.That(ch).IsPunctuation();
 
 ## Stream
 
+If using a derived stream type (e.g. `MemoryStream`), cast to `Stream` first — the extension methods are defined on `IAssertionSource<Stream>`:
+
 ```csharp
-await Assert.That(stream).CanRead();
-await Assert.That(stream).CanWrite();
-await Assert.That(stream).CanSeek();
+await Assert.That((Stream)stream).CanRead();
+await Assert.That((Stream)stream).CanWrite();
+await Assert.That((Stream)stream).CanSeek();
 ```
