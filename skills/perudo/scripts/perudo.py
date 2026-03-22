@@ -55,6 +55,34 @@ def create_initial_state(player_count: int, seed: Optional[int] = None) -> dict:
     }
 
 
+def validate_bid(state, quantity, face_value):
+    """Check if a bid is legal given current state. Returns {"valid": bool, "reason": str}."""
+    if quantity < 1:
+        return {"valid": False, "reason": "Quantity must be at least 1"}
+    if not 1 <= face_value <= 6:
+        return {"valid": False, "reason": "Face value must be 1-6"}
+
+    current_bid = state["current_bid"]
+    if current_bid is None:
+        return {"valid": True, "reason": "First bid of round"}
+
+    # Palifico face lock check
+    if state["palifico"] and state["palifico_locked_face"] is not None and not state["palifico_face_unlocked"]:
+        if face_value != state["palifico_locked_face"]:
+            return {"valid": False, "reason": f"Palifico: face value locked to {state['palifico_locked_face']}, only raise quantity"}
+        if quantity <= current_bid["quantity"]:
+            return {"valid": False, "reason": f"Must bid higher quantity than {current_bid['quantity']}"}
+        return {"valid": True, "reason": "Valid Palifico bid"}
+
+    # Normal bid ordering
+    if quantity > current_bid["quantity"]:
+        return {"valid": True, "reason": "Higher quantity"}
+    if quantity == current_bid["quantity"] and face_value > current_bid["face_value"]:
+        return {"valid": True, "reason": "Same quantity, higher face value"}
+
+    return {"valid": False, "reason": f"Bid must be higher than {current_bid['quantity']}x {current_bid['face_value']}s"}
+
+
 def read_state_from_stdin() -> dict:
     """Read and parse JSON game state from stdin."""
     data = sys.stdin.read().strip()
@@ -74,11 +102,20 @@ def main() -> None:
     init_parser.add_argument("player_count", type=int)
     init_parser.add_argument("--seed", type=int, default=None)
 
+    validate_parser = subparsers.add_parser("validate_bid")
+    validate_parser.add_argument("quantity", type=int)
+    validate_parser.add_argument("face_value", type=int)
+
     args = parser.parse_args()
 
     if args.command == "init":
         state = create_initial_state(args.player_count, args.seed)
         json.dump(state, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+    elif args.command == "validate_bid":
+        state = read_state_from_stdin()
+        result = validate_bid(state, args.quantity, args.face_value)
+        json.dump(result, sys.stdout)
         sys.stdout.write("\n")
 
 

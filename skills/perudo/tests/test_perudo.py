@@ -92,3 +92,113 @@ class TestInit:
         assert result.returncode != 0
         error = json.loads(result.stderr)
         assert "error" in error
+
+
+def make_state_with_bid(current_bid=None, palifico=False,
+                        palifico_locked_face=None,
+                        palifico_face_unlocked=False,
+                        palifico_starter_id=None):
+    """Create a minimal game state JSON string for bid validation tests."""
+    state = {
+        "players": [
+            {"id": 1, "name": "Agent-1", "dice_count": 5, "dice": [1, 2, 3, 4, 5], "eliminated": False, "palifico_used": False},
+            {"id": 2, "name": "Agent-2", "dice_count": 5, "dice": [2, 3, 4, 5, 6], "eliminated": False, "palifico_used": False},
+        ],
+        "current_player_id": 2 if current_bid else 1,
+        "round": 1,
+        "current_bid": current_bid,
+        "bid_history": [],
+        "palifico": palifico,
+        "palifico_starter_id": palifico_starter_id,
+        "palifico_locked_face": palifico_locked_face,
+        "palifico_face_unlocked": palifico_face_unlocked,
+        "phase": "awaiting_action",
+        "total_dice": 10,
+        "seed": None,
+    }
+    return json.dumps(state)
+
+
+class TestValidateBid:
+    def test_first_bid_any_value_is_valid(self):
+        state_json = make_state_with_bid(current_bid=None)
+        result = run_engine("validate_bid", ["1", "3"], stdin_data=state_json)
+        assert result["valid"] is True
+
+    def test_first_bid_minimum_quantity(self):
+        state_json = make_state_with_bid(current_bid=None)
+        result = run_engine("validate_bid", ["1", "2"], stdin_data=state_json)
+        assert result["valid"] is True
+
+    def test_higher_quantity_is_valid(self):
+        bid = {"quantity": 3, "face_value": 4, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["4", "2"], stdin_data=state_json)
+        assert result["valid"] is True
+
+    def test_same_quantity_higher_face_is_valid(self):
+        bid = {"quantity": 3, "face_value": 4, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["3", "5"], stdin_data=state_json)
+        assert result["valid"] is True
+
+    def test_same_quantity_same_face_is_invalid(self):
+        bid = {"quantity": 3, "face_value": 4, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["3", "4"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_lower_quantity_is_invalid(self):
+        bid = {"quantity": 3, "face_value": 4, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["2", "6"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_same_quantity_lower_face_is_invalid(self):
+        bid = {"quantity": 3, "face_value": 4, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["3", "3"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_face_value_out_of_range_high(self):
+        state_json = make_state_with_bid(current_bid=None)
+        result = run_engine("validate_bid", ["1", "7"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_face_value_out_of_range_low(self):
+        state_json = make_state_with_bid(current_bid=None)
+        result = run_engine("validate_bid", ["1", "0"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_quantity_zero_is_invalid(self):
+        state_json = make_state_with_bid(current_bid=None)
+        result = run_engine("validate_bid", ["0", "3"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_palifico_same_face_higher_quantity_valid(self):
+        bid = {"quantity": 2, "face_value": 4, "bidder_id": 1}
+        state_json = make_state_with_bid(
+            current_bid=bid, palifico=True,
+            palifico_locked_face=4, palifico_starter_id=1,
+        )
+        result = run_engine("validate_bid", ["3", "4"], stdin_data=state_json)
+        assert result["valid"] is True
+
+    def test_palifico_different_face_is_invalid_while_locked(self):
+        bid = {"quantity": 2, "face_value": 4, "bidder_id": 1}
+        state_json = make_state_with_bid(
+            current_bid=bid, palifico=True,
+            palifico_locked_face=4, palifico_starter_id=1,
+        )
+        result = run_engine("validate_bid", ["3", "5"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_palifico_face_unlocked_allows_different_face(self):
+        bid = {"quantity": 2, "face_value": 4, "bidder_id": 1}
+        state_json = make_state_with_bid(
+            current_bid=bid, palifico=True,
+            palifico_locked_face=4, palifico_starter_id=1,
+            palifico_face_unlocked=True,
+        )
+        result = run_engine("validate_bid", ["3", "5"], stdin_data=state_json)
+        assert result["valid"] is True
