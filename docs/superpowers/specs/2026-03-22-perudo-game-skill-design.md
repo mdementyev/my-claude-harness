@@ -35,6 +35,7 @@ Deterministic script called via Bash. Handles all game mechanics so the LLM neve
 **CLI interface (all state passed via stdin, results via stdout):**
 
 - `echo '<state>' | python3 perudo.py validate_bid <quantity> <face_value>` — check if bid is legal
+- `echo '<state>' | python3 perudo.py apply_bid <player_id> <quantity> <face_value>` — validate and apply a bid: updates current_bid, bid_history, advances current_player, handles Palifico face lock/unlock. Returns validation result and new state.
 - `echo '<state>' | python3 perudo.py resolve_call <calling_player_id>` — count dice, determine winner/loser, remove die, re-roll, advance round
 - `echo '<state>' | python3 perudo.py player_view <player_id>` — return state from one player's perspective (own dice visible, others hidden)
 - `echo '<state>' | python3 perudo.py status` — return active players, dice counts, whose turn
