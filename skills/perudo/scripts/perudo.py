@@ -242,6 +242,38 @@ def resolve_call(state: dict, calling_player_id: int) -> dict:
     }
 
 
+def apply_bid(state: dict, player_id: int, quantity: int, face_value: int) -> dict:
+    """Validate and apply a bid. Returns validation result and new state if valid."""
+    validation = validate_bid(state, quantity, face_value)
+    if not validation["valid"]:
+        return validation
+
+    new_state = {**state}
+    new_state["current_bid"] = {
+        "quantity": quantity,
+        "face_value": face_value,
+        "bidder_id": player_id,
+    }
+    new_state["bid_history"] = state["bid_history"] + [
+        {"player_id": player_id, "action": "bid", "quantity": quantity, "face_value": face_value}
+    ]
+
+    # Set Palifico locked face on first bid
+    if state["palifico"] and state["palifico_locked_face"] is None:
+        new_state["palifico_locked_face"] = face_value
+
+    # Advance to next active player
+    next_id = next_active_player_after(state, player_id)
+    new_state["current_player_id"] = next_id
+
+    # Check if face lock should lift (next player is the Palifico starter)
+    if state["palifico"] and not state["palifico_face_unlocked"]:
+        if next_id == state["palifico_starter_id"]:
+            new_state["palifico_face_unlocked"] = True
+
+    return {"valid": True, "new_state": new_state}
+
+
 def player_view(state: dict, player_id: int) -> dict:
     """Return game state from one player's perspective. Own dice visible, others hidden."""
     me = None
@@ -324,6 +356,11 @@ def main() -> None:
 
     subparsers.add_parser("status")
 
+    apply_parser = subparsers.add_parser("apply_bid")
+    apply_parser.add_argument("player_id", type=int)
+    apply_parser.add_argument("quantity", type=int)
+    apply_parser.add_argument("face_value", type=int)
+
     args = parser.parse_args()
 
     if args.command == "init":
@@ -348,6 +385,11 @@ def main() -> None:
     elif args.command == "status":
         state = read_state_from_stdin()
         result = status(state)
+        json.dump(result, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+    elif args.command == "apply_bid":
+        state = read_state_from_stdin()
+        result = apply_bid(state, args.player_id, args.quantity, args.face_value)
         json.dump(result, sys.stdout, indent=2)
         sys.stdout.write("\n")
 

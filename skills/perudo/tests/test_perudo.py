@@ -502,3 +502,82 @@ class TestStatus:
         state_json = json.dumps(state)
         status = run_engine("status", stdin_data=state_json)
         assert status["total_dice"] == 20
+
+
+class TestApplyBid:
+    def test_applies_bid_and_advances_player(self):
+        state_json = make_state_with_bid(current_bid=None)
+        result = run_engine("apply_bid", ["1", "3", "4"], stdin_data=state_json)
+        new_state = result["new_state"]
+        assert new_state["current_bid"]["quantity"] == 3
+        assert new_state["current_bid"]["face_value"] == 4
+        assert new_state["current_bid"]["bidder_id"] == 1
+        assert new_state["current_player_id"] == 2
+
+    def test_adds_to_bid_history(self):
+        state_json = make_state_with_bid(current_bid=None)
+        result = run_engine("apply_bid", ["1", "3", "4"], stdin_data=state_json)
+        assert len(result["new_state"]["bid_history"]) == 1
+        assert result["new_state"]["bid_history"][0]["player_id"] == 1
+        assert result["new_state"]["bid_history"][0]["action"] == "bid"
+
+    def test_rejects_invalid_bid(self):
+        bid = {"quantity": 3, "face_value": 4, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("apply_bid", ["2", "2", "3"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_palifico_sets_locked_face_on_first_bid(self):
+        state_json = make_state_with_bid(
+            current_bid=None, palifico=True, palifico_starter_id=1,
+        )
+        result = run_engine("apply_bid", ["1", "2", "4"], stdin_data=state_json)
+        assert result["new_state"]["palifico_locked_face"] == 4
+
+    def test_palifico_face_unlocks_after_going_around(self):
+        """When bid passes the Palifico starter, face lock should lift."""
+        state = {
+            "players": [
+                {"id": 1, "name": "Agent-1", "dice_count": 1, "dice": [4], "eliminated": False, "palifico_used": True},
+                {"id": 2, "name": "Agent-2", "dice_count": 3, "dice": [2, 4, 5], "eliminated": False, "palifico_used": False},
+                {"id": 3, "name": "Agent-3", "dice_count": 3, "dice": [1, 3, 4], "eliminated": False, "palifico_used": False},
+            ],
+            "current_player_id": 3,
+            "round": 2,
+            "current_bid": {"quantity": 2, "face_value": 4, "bidder_id": 2},
+            "bid_history": [
+                {"player_id": 1, "action": "bid", "quantity": 1, "face_value": 4},
+                {"player_id": 2, "action": "bid", "quantity": 2, "face_value": 4},
+            ],
+            "palifico": True,
+            "palifico_starter_id": 1,
+            "palifico_locked_face": 4,
+            "palifico_face_unlocked": False,
+            "phase": "awaiting_action",
+            "total_dice": 7,
+            "seed": None,
+        }
+        result = run_engine("apply_bid", ["3", "3", "4"], stdin_data=json.dumps(state))
+        assert result["new_state"]["palifico_face_unlocked"] is True
+
+    def test_skips_eliminated_players(self):
+        state = {
+            "players": [
+                {"id": 1, "name": "Agent-1", "dice_count": 3, "dice": [2, 4, 5], "eliminated": False, "palifico_used": False},
+                {"id": 2, "name": "Agent-2", "dice_count": 0, "dice": [], "eliminated": True, "palifico_used": False},
+                {"id": 3, "name": "Agent-3", "dice_count": 3, "dice": [1, 3, 4], "eliminated": False, "palifico_used": False},
+            ],
+            "current_player_id": 1,
+            "round": 1,
+            "current_bid": None,
+            "bid_history": [],
+            "palifico": False,
+            "palifico_starter_id": None,
+            "palifico_locked_face": None,
+            "palifico_face_unlocked": False,
+            "phase": "awaiting_action",
+            "total_dice": 6,
+            "seed": None,
+        }
+        result = run_engine("apply_bid", ["1", "2", "3"], stdin_data=json.dumps(state))
+        assert result["new_state"]["current_player_id"] == 3
