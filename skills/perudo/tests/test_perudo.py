@@ -202,3 +202,230 @@ class TestValidateBid:
         )
         result = run_engine("validate_bid", ["3", "5"], stdin_data=state_json)
         assert result["valid"] is True
+
+
+def make_game_state(players_data, current_bid, palifico=False, round_num=1, seed=42):
+    """Create a full game state for resolve_call tests.
+    players_data: list of {"id", "dice", "eliminated"} dicts.
+    """
+    players = []
+    total_dice = 0
+    for pd in players_data:
+        dice = pd["dice"]
+        eliminated = pd.get("eliminated", False)
+        players.append({
+            "id": pd["id"],
+            "name": f"Agent-{pd['id']}",
+            "dice_count": len(dice) if not eliminated else 0,
+            "dice": dice if not eliminated else [],
+            "eliminated": eliminated,
+            "palifico_used": pd.get("palifico_used", False),
+        })
+        if not eliminated:
+            total_dice += len(dice)
+
+    return json.dumps({
+        "players": players,
+        "current_player_id": current_bid["bidder_id"],
+        "round": round_num,
+        "current_bid": current_bid,
+        "bid_history": [],
+        "palifico": palifico,
+        "palifico_starter_id": None,
+        "palifico_locked_face": None,
+        "palifico_face_unlocked": False,
+        "phase": "awaiting_action",
+        "total_dice": total_dice,
+        "seed": seed,
+    })
+
+
+class TestResolveCall:
+    def test_bid_met_caller_loses_die(self):
+        """Bid: 3x fours. Player 1 has [4,4,2], Player 2 has [4,3,5]. Total fours = 3. Bid met -> caller loses."""
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [4, 4, 2]},
+                {"id": 2, "dice": [4, 3, 5]},
+            ],
+            current_bid={"quantity": 3, "face_value": 4, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["call_result"]["loser_id"] == 2
+        assert result["call_result"]["actual_count"] == 3
+
+    def test_bid_not_met_bidder_loses_die(self):
+        """Bid: 4x fours. Player 1 has [4,4,2], Player 2 has [4,3,5]. Total fours = 3. Not met -> bidder loses."""
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [4, 4, 2]},
+                {"id": 2, "dice": [4, 3, 5]},
+            ],
+            current_bid={"quantity": 4, "face_value": 4, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["call_result"]["loser_id"] == 1
+        assert result["call_result"]["actual_count"] == 3
+
+    def test_ones_are_wild(self):
+        """Bid: 3x fours. Player 1 has [1,4,2], Player 2 has [1,3,5]. Ones are wild -> count = 1 four + 2 ones = 3. Bid met."""
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [1, 4, 2]},
+                {"id": 2, "dice": [1, 3, 5]},
+            ],
+            current_bid={"quantity": 3, "face_value": 4, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["call_result"]["actual_count"] == 3
+        assert result["call_result"]["loser_id"] == 2
+
+    def test_ones_not_wild_during_palifico(self):
+        """Palifico round. Bid: 2x fours. Player 1 has [1,4], Player 2 has [1,4]. Ones NOT wild -> count = 2. Bid met."""
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [1, 4]},
+                {"id": 2, "dice": [1, 4]},
+            ],
+            current_bid={"quantity": 2, "face_value": 4, "bidder_id": 1},
+            palifico=True,
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["call_result"]["actual_count"] == 2
+
+    def test_loser_has_fewer_dice_next_round(self):
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [2, 3, 4]},
+                {"id": 2, "dice": [5, 6, 2]},
+            ],
+            current_bid={"quantity": 5, "face_value": 4, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        loser_id = result["call_result"]["loser_id"]
+        new_state = result["new_state"]
+        loser = next(p for p in new_state["players"] if p["id"] == loser_id)
+        assert loser["dice_count"] == 2
+        assert len(loser["dice"]) == 2
+
+    def test_player_eliminated_at_zero_dice(self):
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [2]},
+                {"id": 2, "dice": [5, 6]},
+            ],
+            current_bid={"quantity": 2, "face_value": 2, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["call_result"]["loser_id"] == 1
+        loser = next(p for p in result["new_state"]["players"] if p["id"] == 1)
+        assert loser["eliminated"] is True
+        assert loser["dice_count"] == 0
+        assert loser["dice"] == []
+
+    def test_loser_starts_next_round(self):
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [2, 3, 4]},
+                {"id": 2, "dice": [5, 6, 2]},
+            ],
+            current_bid={"quantity": 5, "face_value": 4, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        loser_id = result["call_result"]["loser_id"]
+        assert result["new_state"]["current_player_id"] == loser_id
+
+    def test_eliminated_loser_next_active_player_starts(self):
+        """If loser is eliminated, next active player starts."""
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [2]},
+                {"id": 2, "dice": [5, 6]},
+                {"id": 3, "dice": [3, 4]},
+            ],
+            current_bid={"quantity": 3, "face_value": 2, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["call_result"]["loser_id"] == 1
+        assert result["new_state"]["current_player_id"] == 2
+
+    def test_palifico_triggered_when_reduced_to_one_die(self):
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [2, 3]},
+                {"id": 2, "dice": [5, 6, 4]},
+                {"id": 3, "dice": [1, 2, 3]},
+            ],
+            current_bid={"quantity": 4, "face_value": 2, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["call_result"]["loser_id"] == 1
+        assert result["new_state"]["palifico"] is True
+        assert result["new_state"]["palifico_starter_id"] == 1
+
+    def test_palifico_not_triggered_twice(self):
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [2, 3], "palifico_used": True},
+                {"id": 2, "dice": [5, 6, 4]},
+                {"id": 3, "dice": [1, 2, 3]},
+            ],
+            current_bid={"quantity": 4, "face_value": 2, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["new_state"]["palifico"] is False
+
+    def test_palifico_skipped_with_two_players(self):
+        """With only 2 players, Palifico should not trigger even when a player drops to 1 die."""
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [2, 3]},
+                {"id": 2, "dice": [5, 6, 4]},
+            ],
+            current_bid={"quantity": 4, "face_value": 2, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["call_result"]["loser_id"] == 1
+        loser = next(p for p in result["new_state"]["players"] if p["id"] == 1)
+        assert loser["dice_count"] == 1
+        assert result["new_state"]["palifico"] is False
+
+    def test_game_over_when_one_player_left(self):
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [2]},
+                {"id": 2, "dice": [5, 6]},
+            ],
+            current_bid={"quantity": 3, "face_value": 2, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        assert result["new_state"]["phase"] == "game_over"
+
+    def test_new_round_has_fresh_dice(self):
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [2, 3, 4]},
+                {"id": 2, "dice": [5, 6, 2]},
+            ],
+            current_bid={"quantity": 5, "face_value": 4, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        new_state = result["new_state"]
+        assert new_state["current_bid"] is None
+        assert new_state["bid_history"] == []
+        assert new_state["round"] == 2
+
+    def test_all_dice_revealed_in_result(self):
+        state_json = make_game_state(
+            players_data=[
+                {"id": 1, "dice": [2, 3, 4]},
+                {"id": 2, "dice": [5, 6, 2]},
+            ],
+            current_bid={"quantity": 5, "face_value": 4, "bidder_id": 1},
+        )
+        result = run_engine("resolve_call", ["2"], stdin_data=state_json)
+        revealed = result["call_result"]["revealed_dice"]
+        assert revealed[0]["id"] == 1
+        assert revealed[0]["dice"] == [2, 3, 4]
+        assert revealed[1]["id"] == 2
+        assert revealed[1]["dice"] == [5, 6, 2]
