@@ -53,28 +53,21 @@ await Assert.That(async () => await LongOperation())
 
 ## Polling / Waiting
 
-### Eventually — Retry Assertion Until Timeout
+### WaitsFor — Retry Assertion Until Timeout
 
 Repeatedly re-evaluates a `Func<T>` and retries the assertion until it passes or times out. Use instead of manual polling loops:
 
 ```csharp
 // Re-evaluates GetStatus() until it returns "ready" or 5s elapses
 await Assert.That(() => GetStatus())
-    .Eventually(s => s.IsEqualTo("ready"), TimeSpan.FromSeconds(5));
+    .WaitsFor(s => s.IsEqualTo("ready"), TimeSpan.FromSeconds(5));
 
 // With custom poll interval (default is 500ms)
 await Assert.That(() => GetCount())
-    .Eventually(c => c.IsGreaterThan(0), TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(100));
+    .WaitsFor(c => c.IsGreaterThan(0), TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(100));
 ```
 
-### WaitsFor — Same Purpose, Extension Method Syntax
-
-```csharp
-await Assert.That(() => condition)
-    .WaitsFor(c => c.IsTrue(), timeout: TimeSpan.FromSeconds(2));
-```
-
-Both `Eventually` and `WaitsFor` **re-evaluate the lambda on each poll** — it's not captured once.
+`WaitsFor` **re-evaluate the lambda on each poll** — it's not captured once.
 
 ## GUID
 
