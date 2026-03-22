@@ -40,7 +40,7 @@ All output is JSON to stdout. Store the latest state JSON in a variable and pipe
   - Moving FROM ones to a normal face (2-6): minimum quantity is current_ones_quantity * 2 + 1. E.g., from "3 ones" the minimum normal bid is "7 of any face"
   - These transitions don't apply during Palifico rounds
 - Players take turns in strict sequential order (by player ID, skipping eliminated). On their turn: raise the bid or call "Dudo"
-- First bid of a round: any quantity (>=1) and face value (1-6)
+- First bid of a round: any quantity (>=1) and face value (2-6). Cannot open a regular round with ones.
 - On Dudo: all dice revealed. Bid met or exceeded -> caller loses a die. Not met -> bidder loses a die
 - Eliminated at 0 dice. Last player standing wins.
 
@@ -67,7 +67,7 @@ All output is JSON to stdout. Store the latest state JSON in a variable and pipe
 >
 > **Rules:**
 > - Players bid on total dice across ALL players. Ones are wild (count as any face value), except during Palifico rounds.
-> - Bids must be strictly higher than the previous: greater quantity, or same quantity with higher face value.
+> - Bids must be strictly higher than the previous: greater quantity, or same quantity with higher face value. You cannot open a round with ones.
 > - **Ones transition:** To switch to ones, divide current quantity by 2 (round up). E.g., from "6 fives" → min "3 ones". To switch from ones back to a normal face, multiply by 2 and add 1. E.g., from "3 ones" → min "7 of any face".
 > - You can either raise the bid or call "Dudo" (liar) to challenge the previous bidder.
 > - On Dudo: if the bid was met or exceeded, YOU lose a die. If not met, the BIDDER loses a die.

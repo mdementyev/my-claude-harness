@@ -64,6 +64,9 @@ def validate_bid(state, quantity, face_value):
 
     current_bid = state["current_bid"]
     if current_bid is None:
+        # Can't open a regular round with ones
+        if face_value == 1 and not state["palifico"]:
+            return {"valid": False, "reason": "Cannot open a round with ones"}
         return {"valid": True, "reason": "First bid of round"}
 
     # Palifico face lock check

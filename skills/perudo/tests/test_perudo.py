@@ -130,6 +130,17 @@ class TestValidateBid:
         result = run_engine("validate_bid", ["1", "2"], stdin_data=state_json)
         assert result["valid"] is True
 
+    def test_cannot_open_round_with_ones(self):
+        state_json = make_state_with_bid(current_bid=None)
+        result = run_engine("validate_bid", ["3", "1"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_can_open_palifico_round_with_ones(self):
+        """During Palifico, opening with ones is allowed."""
+        state_json = make_state_with_bid(current_bid=None, palifico=True, palifico_starter_id=1)
+        result = run_engine("validate_bid", ["1", "1"], stdin_data=state_json)
+        assert result["valid"] is True
+
     def test_higher_quantity_is_valid(self):
         bid = {"quantity": 3, "face_value": 4, "bidder_id": 1}
         state_json = make_state_with_bid(current_bid=bid)

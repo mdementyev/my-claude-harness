@@ -57,7 +57,7 @@ One Claude Code Agent subprocess per player, spawned at game start and communica
 - Ones (aces) are wild — they count as any face value
 - A bid must be higher than the previous: higher quantity, or same quantity with higher face value
 - Players take turns in strict sequential order (by player ID, skipping eliminated players). On their turn, a player either raises the bid or calls "Dudo" (liar) on the previous bidder
-- The first bid of a round has no minimum — any valid quantity (≥1) and face value (1-6) is legal
+- The first bid of a round has no minimum — any valid quantity (≥1) and face value (2-6) is legal. Cannot open a regular round with ones.
 - On a call: all dice are revealed. If the bid is met or exceeded, the caller loses a die. If not met, the bidder loses a die
 - A player is eliminated when they lose all dice
 - Last player standing wins
