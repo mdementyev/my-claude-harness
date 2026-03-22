@@ -47,12 +47,12 @@ dnx -y dotnet-reportgenerator-globaltool -- \
   -reporttypes:TextSummary
 cat CoverageReport/Summary.txt
 
-# HTML report — per-file line highlighting showing covered/uncovered code
+# Detailed report — per-file line coverage with source code
 dnx -y dotnet-reportgenerator-globaltool -- \
   -reports:coverage.cobertura.xml \
   -targetdir:CoverageReport \
-  -reporttypes:Html
-# Open CoverageReport/index.html in browser
+  -reporttypes:Markdown
+cat CoverageReport/Summary.md
 ```
 
 The `--` separator is required to forward `-` prefixed arguments to ReportGenerator. `-y` auto-accepts the NuGet download prompt.
@@ -67,12 +67,12 @@ The TextSummary shows:
 
 ### Finding Uncovered Code
 
-Use the HTML report (`-reporttypes:Html`). It highlights each source file:
-- **Green lines** — covered by tests
-- **Red lines** — not covered
-- **Yellow lines** — partially covered (some branches not taken)
+Use the Markdown report (`-reporttypes:Markdown`). It produces a single file with inline source code and coverage markers:
+- **`✔` with visit count** — line is covered (e.g. `✔  3` means 3 test visits)
+- **`❌ 0`** — line is not covered
+- **No marker** — line is not coverable (declarations, comments, braces)
 
-Navigate to low-coverage classes in the summary table, then click through to see exact uncovered lines.
+The report also includes a **Risk Hotspots** table ranking methods by CRAP score (high complexity + low coverage), and per-class method metrics with branch/line coverage percentages.
 
 ## Excluding from Coverage
 
@@ -120,3 +120,4 @@ public class GeneratedBoilerplate { }
 | `coverlet.collector` package | `Microsoft.Testing.Extensions.CodeCoverage` | `coverlet.collector` uses VSTest data collector, not MTP |
 | No `--coverage-output-format` | `--coverage-output-format cobertura` | Default is `.coverage` binary, not human-readable |
 | `dnx -y pkg -reports:...` | `dnx -y pkg -- -reports:...` | `--` separator needed to forward `-` args to the tool |
+| `-reporttypes:Html` | `-reporttypes:Markdown` | Html produces ~7x more data across many files; Markdown is a single file with the same line-level detail |

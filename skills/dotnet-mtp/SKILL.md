@@ -1,6 +1,6 @@
 ---
 name: dotnet-mtp
-description: MANDATORY before ANY `dotnet test` command in projects using Microsoft Testing Platform (MTP), including TUnit. Do not construct `--treenode-filter` arguments from memory — the syntax is non-obvious and you WILL get it wrong. Also covers MTP-specific code coverage collection (--coverage flag) — do NOT use VSTest's --collect mechanism.
+description: MANDATORY before ANY `dotnet test` command in projects using Microsoft Testing Platform (MTP), including TUnit. Do not construct `--treenode-filter` arguments from memory — the syntax is non-obvious and you WILL get it wrong. Also covers MTP-specific code coverage collection (--coverage flag) — do NOT use VSTest's --collect mechanism. ALSO TRIGGER when the user asks about test coverage gaps, uncovered code, or "what isn't tested" in a .NET/TUnit project — collect real code coverage data instead of guessing by reading source.
 user-invocable: false
 ---
 
@@ -154,6 +154,43 @@ dotnet test --treenode-filter "/*/*/MyClass/*[OS=Linux]"
 | `(ClassA\|ClassB)` | `(ClassA)\|(ClassB)` | Each OR operand needs its own parens |
 | `(!ExactName)` | `(*)&(!ExactName)` | Standalone negation fails for exact names |
 | `--list-tests --treenode-filter "..."` | Run tests with `--no-build` | `--list-tests` ignores filters |
+
+## Finding Coverage Gaps
+
+> **NEVER answer "what's not covered" by reading source and test files.**
+> Run coverage collection. Source-reading produces guesses; coverage data produces facts.
+
+### Step-by-step
+
+1. Run tests with coverage:
+   ```bash
+   dotnet test --project <test-project> \
+     --coverage \
+     --coverage-output-format cobertura \
+     --coverage-output coverage.cobertura.xml
+   ```
+
+2. Generate a quick summary to identify low-coverage areas:
+   ```bash
+   dnx -y dotnet-reportgenerator-globaltool -- \
+     -reports:coverage.cobertura.xml \
+     -targetdir:CoverageReport \
+     -reporttypes:TextSummary
+   cat CoverageReport/Summary.txt
+   ```
+
+3. For line-level detail on low-coverage classes, generate the Markdown report:
+   ```bash
+   dnx -y dotnet-reportgenerator-globaltool -- \
+     -reports:coverage.cobertura.xml \
+     -targetdir:CoverageReport \
+     -reporttypes:Markdown
+   cat CoverageReport/Summary.md
+   ```
+
+4. Present real coverage data to the user. Only THEN read source for context on what uncovered lines do.
+
+See `references/code-coverage.md` for flag details, output format options, and exclusion configuration.
 
 ## Reference Files
 
