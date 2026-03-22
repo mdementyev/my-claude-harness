@@ -203,6 +203,89 @@ class TestValidateBid:
         result = run_engine("validate_bid", ["3", "5"], stdin_data=state_json)
         assert result["valid"] is True
 
+    # --- Ones transition rules ---
+
+    def test_transition_to_ones_valid(self):
+        """From 5x sixes, can bid 3x ones (ceil(5/2) = 3)."""
+        bid = {"quantity": 5, "face_value": 6, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["3", "1"], stdin_data=state_json)
+        assert result["valid"] is True
+
+    def test_transition_to_ones_exact_minimum(self):
+        """From 6x fives, minimum ones bid is ceil(6/2) = 3."""
+        bid = {"quantity": 6, "face_value": 5, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["3", "1"], stdin_data=state_json)
+        assert result["valid"] is True
+
+    def test_transition_to_ones_too_low(self):
+        """From 6x fives, 2x ones is too low (need ceil(6/2) = 3)."""
+        bid = {"quantity": 6, "face_value": 5, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["2", "1"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_transition_to_ones_odd_quantity(self):
+        """From 7x threes, minimum ones bid is ceil(7/2) = 4."""
+        bid = {"quantity": 7, "face_value": 3, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["4", "1"], stdin_data=state_json)
+        assert result["valid"] is True
+
+    def test_transition_to_ones_odd_quantity_too_low(self):
+        """From 7x threes, 3x ones is too low (need ceil(7/2) = 4)."""
+        bid = {"quantity": 7, "face_value": 3, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["3", "1"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_transition_from_ones_valid(self):
+        """From 3x ones, minimum normal bid is 3*2+1 = 7 of any face."""
+        bid = {"quantity": 3, "face_value": 1, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["7", "2"], stdin_data=state_json)
+        assert result["valid"] is True
+
+    def test_transition_from_ones_too_low(self):
+        """From 3x ones, 6x twos is too low (need 3*2+1 = 7)."""
+        bid = {"quantity": 3, "face_value": 1, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["6", "2"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_ones_to_higher_ones(self):
+        """From 3x ones, 4x ones is valid (just higher quantity)."""
+        bid = {"quantity": 3, "face_value": 1, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["4", "1"], stdin_data=state_json)
+        assert result["valid"] is True
+
+    def test_ones_to_same_ones_invalid(self):
+        """From 3x ones, 3x ones is not higher."""
+        bid = {"quantity": 3, "face_value": 1, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["3", "1"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_normal_bid_same_quantity_lower_to_ones_invalid(self):
+        """From 4x threes, can't bid 1x ones (ceil(4/2) = 2, not 1)."""
+        bid = {"quantity": 4, "face_value": 3, "bidder_id": 1}
+        state_json = make_state_with_bid(current_bid=bid)
+        result = run_engine("validate_bid", ["1", "1"], stdin_data=state_json)
+        assert result["valid"] is False
+
+    def test_palifico_no_ones_transition(self):
+        """During Palifico, ones transition rules don't apply (face is locked)."""
+        bid = {"quantity": 2, "face_value": 4, "bidder_id": 1}
+        state_json = make_state_with_bid(
+            current_bid=bid, palifico=True,
+            palifico_locked_face=4, palifico_starter_id=1,
+        )
+        # Can't switch to ones during Palifico
+        result = run_engine("validate_bid", ["1", "1"], stdin_data=state_json)
+        assert result["valid"] is False
+
 
 def make_game_state(players_data, current_bid, palifico=False, round_num=1, seed=42):
     """Create a full game state for resolve_call tests.

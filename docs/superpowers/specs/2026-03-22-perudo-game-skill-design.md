@@ -82,6 +82,10 @@ One Claude Code Agent subprocess per player, spawned at game start and communica
 
 - A bid is higher if quantity is greater
 - If quantity is equal, face value must be greater
+- **Ones transition:** since ones are wild, they follow special conversion:
+  - Moving TO ones from a normal face (2-6): minimum ones quantity is ceil(current_quantity / 2)
+  - Moving FROM ones to a normal face (2-6): minimum quantity is current_ones_quantity * 2 + 1
+  - These transitions don't apply during Palifico rounds (ones aren't wild in Palifico)
 - During Palifico (while face value is locked): only quantity can increase
 
 ## Game State

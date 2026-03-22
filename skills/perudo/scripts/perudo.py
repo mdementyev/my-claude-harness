@@ -74,13 +74,31 @@ def validate_bid(state, quantity, face_value):
             return {"valid": False, "reason": f"Must bid higher quantity than {current_bid['quantity']}"}
         return {"valid": True, "reason": "Valid Palifico bid"}
 
-    # Normal bid ordering
-    if quantity > current_bid["quantity"]:
+    # Ones transition rules (only in non-Palifico rounds)
+    cur_qty = current_bid["quantity"]
+    cur_face = current_bid["face_value"]
+
+    if cur_face != 1 and face_value == 1:
+        # Transitioning TO ones: minimum quantity is ceil(cur_qty / 2)
+        min_ones_qty = (cur_qty + 1) // 2
+        if quantity >= min_ones_qty:
+            return {"valid": True, "reason": f"Valid transition to ones (min {min_ones_qty})"}
+        return {"valid": False, "reason": f"To bid ones, need at least {min_ones_qty} (ceil({cur_qty}/2))"}
+
+    if cur_face == 1 and face_value != 1:
+        # Transitioning FROM ones: minimum quantity is cur_qty * 2 + 1
+        min_normal_qty = cur_qty * 2 + 1
+        if quantity >= min_normal_qty:
+            return {"valid": True, "reason": f"Valid transition from ones (min {min_normal_qty})"}
+        return {"valid": False, "reason": f"From ones, need at least {min_normal_qty}x ({cur_qty}*2+1)"}
+
+    # Same category (both ones, or both normal): standard ordering
+    if quantity > cur_qty:
         return {"valid": True, "reason": "Higher quantity"}
-    if quantity == current_bid["quantity"] and face_value > current_bid["face_value"]:
+    if quantity == cur_qty and face_value > cur_face:
         return {"valid": True, "reason": "Same quantity, higher face value"}
 
-    return {"valid": False, "reason": f"Bid must be higher than {current_bid['quantity']}x {current_bid['face_value']}s"}
+    return {"valid": False, "reason": f"Bid must be higher than {cur_qty}x {cur_face}s"}
 
 
 def count_matching_dice(state: dict, face_value: int) -> int:
