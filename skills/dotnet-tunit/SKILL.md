@@ -1,6 +1,6 @@
 ---
 name: dotnet-tunit
-description: Use when writing, modifying, or reviewing TUnit tests in .NET projects. Covers test structure, assertions, data-driven testing, and TestContainers integration.
+description: Use when writing, modifying, reviewing or improving TUnit tests in .NET projects. Covers test structure, assertion patterns, assertion API usage, data-driven testing, and TestContainers integration. DO NOT TRIGGER on non-TUnit .NET tests.
 user-invocable: false
 ---
 
