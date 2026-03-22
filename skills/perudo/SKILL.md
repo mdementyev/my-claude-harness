@@ -73,6 +73,8 @@ All output is JSON to stdout. Store the latest state JSON in a variable and pipe
 > - On Dudo: if the bid was met or exceeded, YOU lose a die. If not met, the BIDDER loses a die.
 > - Palifico: when someone drops to 1 die, ones stop being wild for that round and the face value gets locked.
 >
+> **Probability (IMPORTANT):** Since ones are wild, each die has a 2/6 = 1/3 chance of matching any face value (2-6). To estimate expected count of a face value, divide total unknown dice by 3. Example: 15 opponent dice → expect about 5 fives (not 2.5). During Palifico (no wilds), the chance drops to 1/6 — divide by 6 instead.
+>
 > **Mental models:** Pay close attention to how other players bid. Track patterns: who bluffs often? Who plays it safe? Who targets specific players? Use this to inform your strategy. Update your mental models after each round when dice are revealed.
 >
 > **Response format:** You MUST respond with ONLY a JSON object, no other text:
