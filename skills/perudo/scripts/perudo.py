@@ -242,6 +242,57 @@ def resolve_call(state: dict, calling_player_id: int) -> dict:
     }
 
 
+def player_view(state: dict, player_id: int) -> dict:
+    """Return game state from one player's perspective. Own dice visible, others hidden."""
+    me = None
+    opponents = []
+    for player in state["players"]:
+        if player["id"] == player_id:
+            me = {
+                "id": player["id"],
+                "name": player["name"],
+                "dice_count": player["dice_count"],
+                "dice": player["dice"],
+            }
+        else:
+            opp = {
+                "id": player["id"],
+                "name": player["name"],
+                "dice_count": player["dice_count"],
+                "eliminated": player["eliminated"],
+            }
+            opponents.append(opp)
+
+    if me is None:
+        error_exit(f"Player {player_id} not found")
+
+    return {
+        "you": me,
+        "opponents": opponents,
+        "round": state["round"],
+        "current_bid": state["current_bid"],
+        "bid_history": state["bid_history"],
+        "palifico": state["palifico"],
+        "total_dice": state["total_dice"],
+        "current_player_id": state["current_player_id"],
+    }
+
+
+def status(state: dict) -> dict:
+    """Return summary of active players, dice counts, whose turn."""
+    active = [
+        {"id": p["id"], "name": p["name"], "dice_count": p["dice_count"]}
+        for p in state["players"] if not p["eliminated"]
+    ]
+    return {
+        "active_players": active,
+        "current_player_id": state["current_player_id"],
+        "round": state["round"],
+        "total_dice": state["total_dice"],
+        "phase": state["phase"],
+    }
+
+
 def read_state_from_stdin() -> dict:
     """Read and parse JSON game state from stdin."""
     data = sys.stdin.read().strip()
@@ -268,6 +319,11 @@ def main() -> None:
     resolve_parser = subparsers.add_parser("resolve_call")
     resolve_parser.add_argument("calling_player_id", type=int)
 
+    view_parser = subparsers.add_parser("player_view")
+    view_parser.add_argument("player_id", type=int)
+
+    subparsers.add_parser("status")
+
     args = parser.parse_args()
 
     if args.command == "init":
@@ -282,6 +338,16 @@ def main() -> None:
     elif args.command == "resolve_call":
         state = read_state_from_stdin()
         result = resolve_call(state, args.calling_player_id)
+        json.dump(result, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+    elif args.command == "player_view":
+        state = read_state_from_stdin()
+        result = player_view(state, args.player_id)
+        json.dump(result, sys.stdout, indent=2)
+        sys.stdout.write("\n")
+    elif args.command == "status":
+        state = read_state_from_stdin()
+        result = status(state)
         json.dump(result, sys.stdout, indent=2)
         sys.stdout.write("\n")
 

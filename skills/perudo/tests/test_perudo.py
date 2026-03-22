@@ -429,3 +429,76 @@ class TestResolveCall:
         assert revealed[0]["dice"] == [2, 3, 4]
         assert revealed[1]["id"] == 2
         assert revealed[1]["dice"] == [5, 6, 2]
+
+
+class TestPlayerView:
+    def test_own_dice_visible(self):
+        state = run_engine("init", ["3", "--seed", "42"])
+        state_json = json.dumps(state)
+        view = run_engine("player_view", ["1"], stdin_data=state_json)
+        assert view["you"]["dice"] == state["players"][0]["dice"]
+        assert view["you"]["id"] == 1
+
+    def test_other_dice_hidden(self):
+        state = run_engine("init", ["3", "--seed", "42"])
+        state_json = json.dumps(state)
+        view = run_engine("player_view", ["1"], stdin_data=state_json)
+        for opponent in view["opponents"]:
+            assert "dice" not in opponent
+            assert "dice_count" in opponent
+
+    def test_opponents_have_names_and_counts(self):
+        state = run_engine("init", ["3", "--seed", "42"])
+        state_json = json.dumps(state)
+        view = run_engine("player_view", ["2"], stdin_data=state_json)
+        assert len(view["opponents"]) == 2
+        names = {o["name"] for o in view["opponents"]}
+        assert names == {"Agent-1", "Agent-3"}
+
+    def test_includes_game_context(self):
+        state = run_engine("init", ["2", "--seed", "42"])
+        state_json = json.dumps(state)
+        view = run_engine("player_view", ["1"], stdin_data=state_json)
+        assert "round" in view
+        assert "current_bid" in view
+        assert "bid_history" in view
+        assert "palifico" in view
+        assert "total_dice" in view
+
+    def test_eliminated_opponents_marked(self):
+        state = run_engine("init", ["3", "--seed", "42"])
+        state["players"][2]["eliminated"] = True
+        state["players"][2]["dice_count"] = 0
+        state["players"][2]["dice"] = []
+        state_json = json.dumps(state)
+        view = run_engine("player_view", ["1"], stdin_data=state_json)
+        eliminated = [o for o in view["opponents"] if o["eliminated"]]
+        assert len(eliminated) == 1
+        assert eliminated[0]["name"] == "Agent-3"
+
+
+class TestStatus:
+    def test_shows_active_players(self):
+        state = run_engine("init", ["3", "--seed", "42"])
+        state_json = json.dumps(state)
+        status = run_engine("status", stdin_data=state_json)
+        assert len(status["active_players"]) == 3
+
+    def test_shows_current_player(self):
+        state = run_engine("init", ["3", "--seed", "42"])
+        state_json = json.dumps(state)
+        status = run_engine("status", stdin_data=state_json)
+        assert status["current_player_id"] == 1
+
+    def test_shows_dice_counts(self):
+        state = run_engine("init", ["2", "--seed", "42"])
+        state_json = json.dumps(state)
+        status = run_engine("status", stdin_data=state_json)
+        for p in status["active_players"]:
+            assert p["dice_count"] == 5
+
+    def test_shows_total_dice(self):
+        state = run_engine("init", ["4", "--seed", "42"])
+        state_json = json.dumps(state)
+        status = run_engine("status", stdin_data=state_json)
+        assert status["total_dice"] == 20
