@@ -36,6 +36,8 @@ Missing `await` compiles but **silently skips the assertion**. The test passes w
 | `Assert.Throws<T>(() => ...)` | `await Assert.That(act).Throws<T>()` |
 | `Assert.Contains("x", str)` | `await Assert.That(str).Contains("x")` |
 | `Assert.Single(c)` | `await Assert.That(c).HasSingleItem()` |
+| `Assert.InRange(v, lo, hi)` | `await Assert.That(v).IsBetween(lo, hi)` |
+| `response.EnsureSuccessStatusCode()` | `await Assert.That(response).IsOk()` |
 | `IAsyncLifetime` | `IAsyncInitializer` + `IAsyncDisposable` |
 
 ## Namespace Imports
@@ -57,4 +59,6 @@ Missing `await` compiles but **silently skips the assertion**. The test passes w
 | `references/assertions-strings.md` | Contains, StartsWith, case/whitespace modifiers, regex, parsing |
 | `references/assertions-collections.md` | `.Count()`, Contains, All/Any, Equivalency, ordering |
 | `references/assertions-exceptions.md` | `Throws`/`ThrowsExactly`, message wildcards, async, try/catch |
-| `references/assertions-specialized.md` | DateTime, Task, GUID, CancellationToken, Member, `WaitsFor` |
+| `references/assertions-specialized.md` | DateTime, Task, GUID, CancellationToken, Member, `Eventually`/`WaitsFor`, `Satisfies` |
+| `references/assertions-json.md` | `JsonElement`, `JsonNode`, JSON string validity |
+| `references/assertions-http.md` | `HttpResponseMessage` status, headers, content; `HttpStatusCode` |

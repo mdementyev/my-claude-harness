@@ -6,7 +6,11 @@
 await Assert.That(str).Contains("world");
 await Assert.That(str).DoesNotContain("forbidden");
 await Assert.That(str).StartsWith("Hello");
+await Assert.That(str).DoesNotStartWith("Bad");
 await Assert.That(str).EndsWith("!");
+await Assert.That(str).DoesNotEndWith("?");
+await Assert.That(str).Matches(@"\d+");
+await Assert.That(str).DoesNotMatch(@"\d+");
 ```
 
 ## Case Insensitivity
@@ -81,3 +85,4 @@ await Assert.That(str).IsNotNullOrWhiteSpace();
 | `Assert.Empty(str)` | `await Assert.That(str).IsEmpty()` |
 | `Assert.Matches(pattern, str)` | `await Assert.That(str).Matches(pattern)` |
 | `IsNullOrWhitespace` (lowercase s) | `IsNullOrWhiteSpace` (capital S) |
+| `.NotStartsWith()` / `.NotContain()` | `.DoesNotStartWith()` / `.DoesNotContain()` — always `DoesNot` prefix |

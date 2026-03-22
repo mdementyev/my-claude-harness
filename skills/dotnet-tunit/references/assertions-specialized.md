@@ -53,14 +53,28 @@ await Assert.That(async () => await LongOperation())
 
 ## Polling / Waiting
 
-Repeatedly evaluates a lambda until a condition is met or timeout:
+### Eventually — Retry Assertion Until Timeout
+
+Repeatedly re-evaluates a `Func<T>` and retries the assertion until it passes or times out. Use instead of manual polling loops:
+
+```csharp
+// Re-evaluates GetStatus() until it returns "ready" or 5s elapses
+await Assert.That(() => GetStatus())
+    .Eventually(s => s.IsEqualTo("ready"), TimeSpan.FromSeconds(5));
+
+// With custom poll interval (default is 500ms)
+await Assert.That(() => GetCount())
+    .Eventually(c => c.IsGreaterThan(0), TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(100));
+```
+
+### WaitsFor — Same Purpose, Extension Method Syntax
 
 ```csharp
 await Assert.That(() => condition)
-    .WaitsFor(c => c == true, timeout: TimeSpan.FromSeconds(2));
+    .WaitsFor(c => c.IsTrue(), timeout: TimeSpan.FromSeconds(2));
 ```
 
-The lambda `() => condition` is **re-evaluated on each poll** — it's not captured once.
+Both `Eventually` and `WaitsFor` **re-evaluate the lambda on each poll** — it's not captured once.
 
 ## GUID
 
@@ -86,6 +100,19 @@ Assert on object properties with `.Member().Satisfies()`:
 await Assert.That(user)
     .Member(x => x.Name).Satisfies(val => val.IsEqualTo("Alice"))
     .And.Member(x => x.Age).Satisfies(val => val.IsGreaterThan(0));
+```
+
+## Satisfies with Mapping
+
+Extract a property or transform a value, then assert on the result — all in one chain:
+
+```csharp
+// Map then assert with predicate
+await Assert.That(response).Satisfies(r => r.StatusCode == 200);
+
+// Map to a new value, then chain assertions on it
+await Assert.That(user)
+    .Satisfies(u => u.Email, email => email.Contains("@"));
 ```
 
 ## Character
