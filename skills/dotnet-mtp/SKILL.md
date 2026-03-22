@@ -1,6 +1,6 @@
 ---
 name: dotnet-mtp
-description: MANDATORY before ANY `dotnet test` command in projects using Microsoft Testing Platform (MTP), including TUnit. Do not construct `--treenode-filter` arguments from memory — the syntax is non-obvious and you WILL get it wrong.
+description: MANDATORY before ANY `dotnet test` command in projects using Microsoft Testing Platform (MTP), including TUnit. Do not construct `--treenode-filter` arguments from memory — the syntax is non-obvious and you WILL get it wrong. Also covers MTP-specific code coverage collection (--coverage flag) — do NOT use VSTest's --collect mechanism.
 user-invocable: false
 ---
 
@@ -154,3 +154,9 @@ dotnet test --treenode-filter "/*/*/MyClass/*[OS=Linux]"
 | `(ClassA\|ClassB)` | `(ClassA)\|(ClassB)` | Each OR operand needs its own parens |
 | `(!ExactName)` | `(*)&(!ExactName)` | Standalone negation fails for exact names |
 | `--list-tests --treenode-filter "..."` | Run tests with `--no-build` | `--list-tests` ignores filters |
+
+## Reference Files
+
+| File | Covers |
+|---|---|
+| `references/code-coverage.md` | Coverage collection, Cobertura reports, ReportGenerator, exclusions |
