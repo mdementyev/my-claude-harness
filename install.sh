@@ -4,8 +4,10 @@ set -euo pipefail
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILLS_SRC="$REPO_DIR/skills"
 SKILLS_DST="$HOME/.claude/skills"
+HOOKS_SRC="$REPO_DIR/hooks"
+HOOKS_DST="$HOME/.claude/hooks"
 
-mkdir -p "$SKILLS_DST"
+mkdir -p "$SKILLS_DST" "$HOOKS_DST"
 
 # Remove stale symlinks pointing into this repo
 for link in "$SKILLS_DST"/*/; do
@@ -44,4 +46,42 @@ for skill_dir in "$SKILLS_SRC"/*/; do
   fi
 
   ln -s "$skill_dir" "$dest"
+done
+
+# Remove stale hook symlinks pointing into this repo
+for link in "$HOOKS_DST"/*; do
+  [ -L "$link" ] || continue
+  target="$(readlink "$link")"
+  case "$target" in
+    "$HOOKS_SRC"/*)
+      if [ ! -e "$link" ]; then
+        echo "removing stale hook symlink: $(basename "$link")"
+        rm "$link"
+      fi
+      ;;
+  esac
+done
+
+# Create/update symlinks for each hook
+for hook_file in "$HOOKS_SRC"/*; do
+  [ -f "$hook_file" ] || continue
+  name="$(basename "$hook_file")"
+  dest="$HOOKS_DST/$name"
+
+  if [ -L "$dest" ]; then
+    existing="$(readlink "$dest")"
+    if [ "$existing" = "$hook_file" ]; then
+      echo "ok: hook $name"
+      continue
+    fi
+    echo "updating: hook $name"
+    rm "$dest"
+  elif [ -e "$dest" ]; then
+    echo "skipping: hook $name (non-symlink already exists at $dest)"
+    continue
+  else
+    echo "linking: hook $name"
+  fi
+
+  ln -s "$hook_file" "$dest"
 done
