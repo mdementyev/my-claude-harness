@@ -1,6 +1,6 @@
 ---
 name: ilspy-decompile
-description: Understand implementation details of .NET code by decompiling assemblies. Use when the user wants to see how a .NET API works internally, inspect NuGet package source, view framework implementation, or understand compiled .NET binaries.
+description: Decompile .NET assemblies to see method bodies, private members, and internal implementation logic — the code behind the API surface. Use when dotnet-inspect's API queries aren't enough and you need to understand HOW code works internally, examine closed-source assemblies without SourceLink, view compiler-generated output, or analyze IL for performance investigation.
 allowed-tools: Bash(dnx:*)
 ---
 
